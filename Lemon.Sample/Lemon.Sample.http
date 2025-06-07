@@ -1,0 +1,6 @@
+@Lemon.Sample_HostAddress = http://localhost:5138
+
+GET {{Lemon.Sample_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
