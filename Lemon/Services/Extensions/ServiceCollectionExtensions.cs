@@ -42,11 +42,11 @@ public static class ServiceCollectionExtensions
         // 添加响应服务
         services.AddResponseServices(configuration);
 
+        // 添加验证器
+        services.AddFluentValidation();
+
         // 添加业务服务
         // services.AddBusinessServices();
-
-        // 添加验证器
-        // services.AddFluentValidation();
 
         // 添加HTTP上下文访问器
         // services.AddHttpContextAccessor();
@@ -78,11 +78,7 @@ public static class ServiceCollectionExtensions
                     }
                     else
                     {
-                        policy
-                            .AllowAnyOrigin()
-                            .AllowAnyHeader()
-                            .AllowAnyMethod()
-                            .AllowCredentials();
+                        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
                     }
                 }
             );
@@ -204,10 +200,13 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// 添加FluentValidation
+    /// 添加FluentValidation验证服务
     /// </summary>
     private static IServiceCollection AddFluentValidation(this IServiceCollection services)
     {
+        // 自动注册当前程序集中的所有验证器
+        services.AddValidatorsFromAssembly(typeof(ServiceCollectionExtensions).Assembly);
+
         return services;
     }
 
