@@ -3,6 +3,7 @@ using FluentValidation;
 using FreeSql;
 using Lemon.Services.Cache;
 using Lemon.Services.Jwt;
+using Lemon.Services.Response;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
@@ -37,6 +38,9 @@ public static class ServiceCollectionExtensions
 
         // 添加JWT服务
         services.AddJwtService(configuration);
+
+        // 添加响应服务
+        services.AddResponseServices(configuration);
 
         // 添加业务服务
         // services.AddBusinessServices();
@@ -205,5 +209,110 @@ public static class ServiceCollectionExtensions
     private static IServiceCollection AddFluentValidation(this IServiceCollection services)
     {
         return services;
+    }
+
+    /// <summary>
+    /// 添加响应服务
+    /// </summary>
+    private static IServiceCollection AddResponseServices(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        // 注册响应消息服务
+        services.AddSingleton<IResponseMessageService>(provider =>
+        {
+            var messageService = new ResponseMessageService();
+
+            // 从配置文件中加载自定义状态码和消息
+            LoadCustomMessagesFromConfiguration(messageService, configuration);
+
+            return messageService;
+        });
+
+        // 注册响应构建器
+        services.AddScoped<IResponseBuilder, ResponseBuilder>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 添加响应服务并配置自定义状态码和消息
+    /// </summary>
+    /// <param name="services">服务集合</param>
+    /// <param name="configuration">配置对象</param>
+    /// <param name="configureOptions">额外的配置选项</param>
+    /// <returns>服务集合</returns>
+    public static IServiceCollection AddResponseServices(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Action<ResponseOptions>? configureOptions = null
+    )
+    {
+        // 注册响应消息服务
+        services.AddSingleton<IResponseMessageService>(provider =>
+        {
+            var messageService = new ResponseMessageService();
+
+            // 从配置文件中加载自定义状态码和消息
+            LoadCustomMessagesFromConfiguration(messageService, configuration);
+
+            // 如果有额外的自定义配置，应用自定义配置
+            if (configureOptions != null)
+            {
+                var options = new ResponseOptions();
+                configureOptions(options);
+                messageService.SetMessages(options.CustomMessages);
+            }
+
+            return messageService;
+        });
+
+        // 注册响应构建器
+        services.AddScoped<IResponseBuilder, ResponseBuilder>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 从配置文件中加载自定义状态码和消息
+    /// </summary>
+    /// <param name="messageService">消息服务</param>
+    /// <param name="configuration">配置对象</param>
+    private static void LoadCustomMessagesFromConfiguration(
+        ResponseMessageService messageService,
+        IConfiguration configuration
+    )
+    {
+        try
+        {
+            var responseSection = configuration.GetSection(ResponseConfiguration.SectionName);
+            if (!responseSection.Exists())
+            {
+                return;
+            }
+
+            var customMessagesSection = responseSection.GetSection("CustomMessages");
+            if (!customMessagesSection.Exists())
+            {
+                return;
+            }
+
+            var customMessages = new Dictionary<int, string>();
+
+            foreach (var item in customMessagesSection.GetChildren())
+            {
+                if (int.TryParse(item.Key, out var code) && !string.IsNullOrEmpty(item.Value))
+                {
+                    customMessages[code] = item.Value;
+                }
+            }
+
+            if (customMessages.Count > 0)
+            {
+                messageService.SetMessages(customMessages);
+            }
+        }
+        catch (Exception) { }
     }
 }
