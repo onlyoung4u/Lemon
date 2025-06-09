@@ -1,0 +1,193 @@
+using System.Security.Claims;
+using System.Text;
+using Lemon.Services.Cache;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
+
+namespace Lemon.Services.Jwt;
+
+public class JwtService(
+    IOptionsMonitor<List<JwtOptions>> jwtOptionsMonitor,
+    IHybridCacheService cache
+) : IJwtService
+{
+    private readonly IOptionsMonitor<List<JwtOptions>> _jwtOptionsMonitor = jwtOptionsMonitor;
+    private readonly IHybridCacheService _cache = cache;
+    private readonly JsonWebTokenHandler _tokenHandler = new();
+
+    /// <summary>
+    /// 生成JWT令牌
+    /// </summary>
+    public async Task<string> GenerateToken(string userId, string? name = null)
+    {
+        var options = GetJwtOptions(name);
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.SecretKey));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var jti = Guid.NewGuid().ToString();
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, userId),
+            new(JwtRegisteredClaimNames.Jti, jti),
+            new(
+                JwtRegisteredClaimNames.Iat,
+                DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+                ClaimValueTypes.Integer64
+            ),
+        };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(options.ExpiresInMinutes),
+            Issuer = options.Issuer,
+            Audience = options.Audience,
+            SigningCredentials = credentials,
+        };
+
+        var token = _tokenHandler.CreateToken(tokenDescriptor);
+
+        if (options.SSO)
+        {
+            var cacheKey = $"lemon:jwt:{options.Name}:{userId}";
+            await _cache.SetAsync(cacheKey, jti, TimeSpan.FromMinutes(options.ExpiresInMinutes));
+        }
+
+        return token;
+    }
+
+    /// <summary>
+    /// 验证JWT令牌
+    /// </summary>
+    public async Task<int> ValidateToken(string token, string? name = null)
+    {
+        try
+        {
+            var options = GetJwtOptions(name);
+            var validationParameters = GetTokenValidationParameters(options);
+            var result = await _tokenHandler.ValidateTokenAsync(token, validationParameters);
+
+            if (!result.IsValid)
+            {
+                return 0;
+            }
+
+            var jti = result.ClaimsIdentity.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+            var userId = result.ClaimsIdentity.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+            if (string.IsNullOrEmpty(jti) || string.IsNullOrEmpty(userId))
+            {
+                return 0;
+            }
+
+            var revokedKey = $"lemon:jwt:revoked:{options.Name}:{jti}";
+            if (await _cache.ExistsAsync(revokedKey))
+            {
+                return 0;
+            }
+
+            if (options.SSO)
+            {
+                var cacheKey = $"lemon:jwt:{options.Name}:{userId}";
+                var cachedJti = await _cache.GetAsync<string>(cacheKey);
+                if (cachedJti != jti)
+                {
+                    return 0;
+                }
+            }
+
+            return int.Parse(userId);
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// 撤销JWT令牌
+    /// </summary>
+    public async Task<bool> RevokeToken(string token, string? name = null)
+    {
+        try
+        {
+            var options = GetJwtOptions(name);
+            var validationParameters = GetTokenValidationParameters(options);
+            var result = await _tokenHandler.ValidateTokenAsync(token, validationParameters);
+
+            if (!result.IsValid)
+            {
+                return false;
+            }
+
+            var jti = result.ClaimsIdentity.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+            var exp = result.ClaimsIdentity.FindFirst(JwtRegisteredClaimNames.Exp)?.Value;
+
+            if (!string.IsNullOrEmpty(jti) && !string.IsNullOrEmpty(exp))
+            {
+                var expTime = DateTimeOffset.FromUnixTimeSeconds(long.Parse(exp));
+                var revokedKey = $"lemon:jwt:revoked:{options.Name}:{jti}";
+                var ttl = expTime - DateTimeOffset.UtcNow;
+
+                if (ttl > TimeSpan.Zero)
+                {
+                    await _cache.SetAsync(revokedKey, true, ttl);
+                }
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 获取JWT配置选项
+    /// </summary>
+    private JwtOptions GetJwtOptions(string? name = null)
+    {
+        var allOptions = _jwtOptionsMonitor.CurrentValue;
+
+        if (allOptions == null || allOptions.Count == 0)
+        {
+            throw new InvalidOperationException("未配置JWT选项");
+        }
+
+        if (string.IsNullOrEmpty(name))
+        {
+            return allOptions.First();
+        }
+
+        var option =
+            allOptions.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+            ?? throw new ArgumentException($"未找到名为 '{name}' 的JWT配置");
+
+        return option;
+    }
+
+    /// <summary>
+    /// 获取Token验证参数
+    /// </summary>
+    /// <param name="options"></param>
+    /// <returns></returns>
+    private static TokenValidationParameters GetTokenValidationParameters(JwtOptions options)
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.SecretKey));
+
+        return new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = options.Issuer,
+            ValidAudience = options.Audience,
+            IssuerSigningKey = key,
+            ClockSkew = TimeSpan.Zero,
+        };
+    }
+}
