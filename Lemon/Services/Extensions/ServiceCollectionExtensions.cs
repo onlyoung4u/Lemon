@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json.Serialization;
 using FluentValidation;
 using FreeSql;
@@ -20,6 +21,9 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration
     )
     {
+        // 添加控制器
+        services.AddControllers().AddLemonControllers();
+
         // 配置Json序列化选项
         services.ConfigureHttpJsonOptions(options =>
         {
@@ -313,5 +317,26 @@ public static class ServiceCollectionExtensions
             }
         }
         catch (Exception) { }
+    }
+
+    /// <summary>
+    /// 为 MVC 控制器配置添加 Lemon 框架控制器发现支持
+    /// </summary>
+    /// <param name="mvcBuilder">MVC 构建器</param>
+    /// <returns>MVC 构建器</returns>
+    public static IMvcBuilder AddLemonControllers(this IMvcBuilder mvcBuilder)
+    {
+        return mvcBuilder.ConfigureApplicationPartManager(manager =>
+        {
+            // 自动发现 Lemon 程序集中的所有控制器
+            var lemonAssembly = Assembly.GetAssembly(typeof(ServiceCollectionExtensions));
+
+            if (lemonAssembly != null)
+            {
+                manager.ApplicationParts.Add(
+                    new Microsoft.AspNetCore.Mvc.ApplicationParts.AssemblyPart(lemonAssembly)
+                );
+            }
+        });
     }
 }
