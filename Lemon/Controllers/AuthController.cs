@@ -55,6 +55,7 @@ public class AuthController(
     /// 退出登录
     /// </summary>
     [HttpPost("logout")]
+    [JwtAuth]
     public async Task<IActionResult> Logout(
         [FromHeader(Name = "Authorization")] string? authorization
     )
