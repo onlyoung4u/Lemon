@@ -1,17 +1,27 @@
+using Lemon.Services.Database;
 using Lemon.Services.Exceptions;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Lemon.Services.Extensions;
 
 public static class ApplicationBuilderExtensions
 {
-    public static WebApplication UseLemon(this WebApplication app)
+    public static WebApplication UseLemon(this WebApplication app, bool isDevelopment = false)
     {
         // 跨域
         app.UseCors("LemonCorsPolicy");
 
         // 异常处理
         app.UseLemonExceptionHandler();
+
+        // 数据库填充
+        if (isDevelopment && app.Configuration.GetValue("DataSeed:Enabled", false))
+        {
+            app.UseLemonDataSeed();
+        }
 
         return app;
     }
@@ -24,5 +34,44 @@ public static class ApplicationBuilderExtensions
     public static IApplicationBuilder UseLemonExceptionHandler(this IApplicationBuilder app)
     {
         return app.UseMiddleware<ExceptionHandlerMiddleware>();
+    }
+
+    /// <summary>
+    /// 使用数据库填充（在应用启动时执行）
+    /// </summary>
+    /// <param name="app">Web应用程序</param>
+    /// <param name="enabled">是否在应用启动时执行填充</param>
+    /// <returns>Web应用程序</returns>
+    public static WebApplication UseLemonDataSeed(this WebApplication app)
+    {
+        _ = Task.Run(async () =>
+        {
+            using var scope = app.Services.CreateScope();
+            var seedManager = scope.ServiceProvider.GetRequiredService<DataSeedManager>();
+            var logger = scope.ServiceProvider.GetService<ILogger<DataSeedManager>>();
+
+            try
+            {
+                await seedManager.SeedAllAsync();
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "应用启动时数据库填充失败");
+            }
+        });
+
+        return app;
+    }
+
+    /// <summary>
+    /// 手动执行数据库填充
+    /// </summary>
+    /// <param name="app">Web应用程序</param>
+    /// <returns>填充任务</returns>
+    public static async Task SeedDatabaseAsync(this WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+        var seedManager = scope.ServiceProvider.GetRequiredService<DataSeedManager>();
+        await seedManager.SeedAllAsync();
     }
 }

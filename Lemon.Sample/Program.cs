@@ -18,7 +18,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseLemon();
+app.UseLemon(app.Environment.IsDevelopment());
 
 app.MapControllers();
 

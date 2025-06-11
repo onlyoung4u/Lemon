@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using FluentValidation;
 using FreeSql;
 using Lemon.Services.Cache;
+using Lemon.Services.Database;
 using Lemon.Services.Jwt;
 using Lemon.Services.Response;
 using Microsoft.Extensions.Configuration;
@@ -48,6 +49,9 @@ public static class ServiceCollectionExtensions
 
         // 添加验证器
         services.AddFluentValidation();
+
+        // 添加数据库填充服务
+        services.AddDataSeedServices();
 
         // 添加业务服务
         // services.AddBusinessServices();
@@ -338,5 +342,46 @@ public static class ServiceCollectionExtensions
                 );
             }
         });
+    }
+
+    /// <summary>
+    /// 添加数据库填充服务
+    /// </summary>
+    private static IServiceCollection AddDataSeedServices(this IServiceCollection services)
+    {
+        // 注册数据库填充管理器
+        services.AddScoped<DataSeedManager>();
+
+        var assembliesToScan = new List<Assembly>();
+
+        var currentAssembly = typeof(ServiceCollectionExtensions).Assembly;
+        assembliesToScan.Add(currentAssembly);
+
+        var entryAssembly = Assembly.GetEntryAssembly();
+        if (entryAssembly != null && entryAssembly != currentAssembly)
+        {
+            assembliesToScan.Add(entryAssembly);
+        }
+
+        var allSeedServiceTypes = new List<Type>();
+
+        foreach (var assembly in assembliesToScan)
+        {
+            var seedServiceTypes = assembly
+                .GetTypes()
+                .Where(t =>
+                    t.IsClass && !t.IsAbstract && typeof(IDataSeedService).IsAssignableFrom(t)
+                )
+                .ToList();
+
+            allSeedServiceTypes.AddRange(seedServiceTypes);
+        }
+
+        foreach (var serviceType in allSeedServiceTypes)
+        {
+            services.AddScoped(typeof(IDataSeedService), serviceType);
+        }
+
+        return services;
     }
 }
