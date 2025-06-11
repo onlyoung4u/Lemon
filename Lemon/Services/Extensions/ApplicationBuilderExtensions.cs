@@ -1,6 +1,7 @@
 using Lemon.Services.Database;
 using Lemon.Services.Exceptions;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,15 @@ public static class ApplicationBuilderExtensions
 {
     public static WebApplication UseLemon(this WebApplication app, bool isDevelopment = false)
     {
+        // 配置转发头处理，用于正确获取客户端IP
+        app.UseForwardedHeaders(
+            new ForwardedHeadersOptions
+            {
+                ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+            }
+        );
+
         // 跨域
         app.UseCors("LemonCorsPolicy");
 

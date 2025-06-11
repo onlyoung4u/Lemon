@@ -6,6 +6,7 @@ using Lemon.Services.Cache;
 using Lemon.Services.Database;
 using Lemon.Services.Jwt;
 using Lemon.Services.Response;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
@@ -22,15 +23,8 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration
     )
     {
-        // 添加控制器
-        services.AddControllers().AddLemonControllers();
-
-        // 配置Json序列化选项
-        services.ConfigureHttpJsonOptions(options =>
-        {
-            options.SerializerOptions.PropertyNameCaseInsensitive = true;
-            options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-        });
+        // 配置控制器
+        services.ConfigureControllers();
 
         // 添加跨域
         services.AddLemonCors(configuration);
@@ -58,6 +52,54 @@ public static class ServiceCollectionExtensions
 
         // 添加HTTP上下文访问器
         // services.AddHttpContextAccessor();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 配置控制器
+    /// </summary>
+    /// <param name="services">服务集合</param>
+    /// <returns>服务集合</returns>
+    private static IServiceCollection ConfigureControllers(this IServiceCollection services)
+    {
+        services
+            .AddControllers()
+            .ConfigureApplicationPartManager(manager =>
+            {
+                var lemonAssembly = Assembly.GetAssembly(typeof(ServiceCollectionExtensions));
+
+                if (lemonAssembly != null)
+                {
+                    manager.ApplicationParts.Add(
+                        new Microsoft.AspNetCore.Mvc.ApplicationParts.AssemblyPart(lemonAssembly)
+                    );
+                }
+            })
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                options.JsonSerializerOptions.DefaultIgnoreCondition =
+                    JsonIgnoreCondition.WhenWritingNull;
+            })
+            .ConfigureApiBehaviorOptions(options =>
+            {
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var responseBuilder =
+                        context.HttpContext.RequestServices.GetRequiredService<IResponseBuilder>();
+
+                    var firstError = context
+                        .ModelState.Where(x => x.Value?.Errors?.Count > 0)
+                        .SelectMany(x => x.Value!.Errors)
+                        .Select(x => x.ErrorMessage)
+                        .FirstOrDefault();
+
+                    var response = responseBuilder.BadRequest(firstError ?? "参数错误");
+
+                    return new OkObjectResult(response);
+                };
+            });
 
         return services;
     }
@@ -321,27 +363,6 @@ public static class ServiceCollectionExtensions
             }
         }
         catch (Exception) { }
-    }
-
-    /// <summary>
-    /// 为 MVC 控制器配置添加 Lemon 框架控制器发现支持
-    /// </summary>
-    /// <param name="mvcBuilder">MVC 构建器</param>
-    /// <returns>MVC 构建器</returns>
-    public static IMvcBuilder AddLemonControllers(this IMvcBuilder mvcBuilder)
-    {
-        return mvcBuilder.ConfigureApplicationPartManager(manager =>
-        {
-            // 自动发现 Lemon 程序集中的所有控制器
-            var lemonAssembly = Assembly.GetAssembly(typeof(ServiceCollectionExtensions));
-
-            if (lemonAssembly != null)
-            {
-                manager.ApplicationParts.Add(
-                    new Microsoft.AspNetCore.Mvc.ApplicationParts.AssemblyPart(lemonAssembly)
-                );
-            }
-        });
     }
 
     /// <summary>
