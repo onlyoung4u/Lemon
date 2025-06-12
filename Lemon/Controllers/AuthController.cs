@@ -1,6 +1,8 @@
 using Lemon.Dtos;
 using Lemon.Models;
+using Lemon.Services.Attributes;
 using Lemon.Services.Jwt;
+using Lemon.Services.Middleware;
 using Lemon.Services.Response;
 using Lemon.Services.Utils;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Lemon.Controllers;
 
 [ApiController]
-[Route("api/auth")]
+[Route("admin/auth")]
 public class AuthController(
     IResponseBuilder responseBuilder,
     IFreeSql freeSql,
@@ -22,6 +24,7 @@ public class AuthController(
     /// 登录
     /// </summary>
     [HttpPost("login")]
+    [LemonAdmin(null, "登录")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var user = await _freeSql
@@ -40,7 +43,8 @@ public class AuthController(
             return Error("用户已禁用");
         }
 
-        var token = await _jwtService.GenerateToken(user.Id.ToString());
+        var userInfo = new JwtUserInfo(user.Id.ToString(), user.Username, user.Nickname);
+        var token = await _jwtService.GenerateToken(userInfo);
 
         await _freeSql
             .Update<LemonUser>(user.Id)
@@ -55,7 +59,8 @@ public class AuthController(
     /// 退出登录
     /// </summary>
     [HttpPost("logout")]
-    [JwtAuth]
+    [RequireJwtAuth]
+    [LemonAdmin(null, "退出登录")]
     public async Task<IActionResult> Logout(
         [FromHeader(Name = "Authorization")] string? authorization
     )

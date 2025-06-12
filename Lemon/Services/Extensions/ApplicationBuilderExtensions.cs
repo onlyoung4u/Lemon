@@ -1,5 +1,6 @@
 using Lemon.Services.Database;
 using Lemon.Services.Exceptions;
+using Lemon.Services.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
@@ -12,6 +13,12 @@ public static class ApplicationBuilderExtensions
 {
     public static WebApplication UseLemon(this WebApplication app, bool isDevelopment = false)
     {
+        // 数据库填充
+        if (isDevelopment && app.Configuration.GetValue("DataSeed:Enabled", false))
+        {
+            app.UseLemonDataSeed();
+        }
+
         // 配置转发头处理，用于正确获取客户端IP
         app.UseForwardedHeaders(
             new ForwardedHeadersOptions
@@ -27,11 +34,11 @@ public static class ApplicationBuilderExtensions
         // 异常处理
         app.UseLemonExceptionHandler();
 
-        // 数据库填充
-        if (isDevelopment && app.Configuration.GetValue("DataSeed:Enabled", false))
-        {
-            app.UseLemonDataSeed();
-        }
+        // JWT认证
+        app.UseJwtAuth();
+
+        // 权限检查和日志记录
+        app.UsePermissionAndLog();
 
         return app;
     }
@@ -44,6 +51,22 @@ public static class ApplicationBuilderExtensions
     public static IApplicationBuilder UseLemonExceptionHandler(this IApplicationBuilder app)
     {
         return app.UseMiddleware<ExceptionHandlerMiddleware>();
+    }
+
+    /// <summary>
+    /// 使用JWT认证中间件
+    /// </summary>
+    public static IApplicationBuilder UseJwtAuth(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<JwtAuthMiddleware>();
+    }
+
+    /// <summary>
+    /// 使用权限检查和日志记录中间件
+    /// </summary>
+    public static IApplicationBuilder UsePermissionAndLog(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<PermissionAndLogMiddleware>();
     }
 
     /// <summary>

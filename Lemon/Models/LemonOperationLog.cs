@@ -17,8 +17,6 @@ public class LemonOperationLog : LemonBase
 
     public string Description { get; set; }
 
-    public string Route { get; set; }
-
     [Column(StringLength = 10)]
     public string Method { get; set; }
 

@@ -19,6 +19,58 @@ public class JwtService(
     /// <summary>
     /// 生成JWT令牌
     /// </summary>
+    public async Task<string> GenerateToken(IJwtUserInfo userInfo, string? name = null)
+    {
+        var options = GetJwtOptions(name);
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.SecretKey));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var jti = Guid.NewGuid().ToString();
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, userInfo.UserId),
+            new(JwtRegisteredClaimNames.Jti, jti),
+            new(
+                JwtRegisteredClaimNames.Iat,
+                DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+                ClaimValueTypes.Integer64
+            ),
+        };
+
+        if (!string.IsNullOrEmpty(userInfo.Username))
+        {
+            claims.Add(new Claim("username", userInfo.Username));
+        }
+
+        if (!string.IsNullOrEmpty(userInfo.Nickname))
+        {
+            claims.Add(new Claim("nickname", userInfo.Nickname));
+        }
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(options.ExpiresInMinutes),
+            Issuer = options.Issuer,
+            Audience = options.Audience,
+            SigningCredentials = credentials,
+        };
+
+        var token = _tokenHandler.CreateToken(tokenDescriptor);
+
+        if (options.SSO)
+        {
+            var cacheKey = $"lemon:jwt:{options.Name}:{userInfo.UserId}";
+            await _cache.SetAsync(cacheKey, jti, TimeSpan.FromMinutes(options.ExpiresInMinutes));
+        }
+
+        return token;
+    }
+
+    /// <summary>
+    /// 生成JWT令牌
+    /// </summary>
     public async Task<string> GenerateToken(string userId, string? name = null)
     {
         var options = GetJwtOptions(name);
@@ -59,9 +111,9 @@ public class JwtService(
     }
 
     /// <summary>
-    /// 验证JWT令牌
+    /// 验证JWT令牌并返回用户信息
     /// </summary>
-    public async Task<int> ValidateToken(string token, string? name = null)
+    public async Task<IJwtUserInfo?> ValidateTokenAndGetUserInfo(string token, string? name = null)
     {
         try
         {
@@ -71,21 +123,23 @@ public class JwtService(
 
             if (!result.IsValid)
             {
-                return 0;
+                return null;
             }
 
             var jti = result.ClaimsIdentity.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
             var userId = result.ClaimsIdentity.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            var username = result.ClaimsIdentity.FindFirst("username")?.Value;
+            var nickname = result.ClaimsIdentity.FindFirst("nickname")?.Value;
 
             if (string.IsNullOrEmpty(jti) || string.IsNullOrEmpty(userId))
             {
-                return 0;
+                return null;
             }
 
             var revokedKey = $"lemon:jwt:revoked:{options.Name}:{jti}";
             if (await _cache.ExistsAsync(revokedKey))
             {
-                return 0;
+                return null;
             }
 
             if (options.SSO)
@@ -94,15 +148,15 @@ public class JwtService(
                 var cachedJti = await _cache.GetAsync<string>(cacheKey);
                 if (cachedJti != jti)
                 {
-                    return 0;
+                    return null;
                 }
             }
 
-            return int.Parse(userId);
+            return new JwtUserInfo(userId, username, nickname);
         }
         catch
         {
-            return 0;
+            return null;
         }
     }
 

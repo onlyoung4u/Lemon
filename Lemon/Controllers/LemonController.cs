@@ -22,6 +22,7 @@ public abstract class LemonController(IResponseBuilder responseBuilder) : Contro
     /// <returns></returns>
     protected IActionResult Success<T>(T? data = default, string? message = null)
     {
+        Response.Headers["X-Lemon-Success"] = "true";
         return Ok(_responseBuilder.Success(data, message));
     }
 
@@ -33,6 +34,7 @@ public abstract class LemonController(IResponseBuilder responseBuilder) : Contro
     /// <returns></returns>
     protected IActionResult Success(object? data = null, string? message = null)
     {
+        Response.Headers["X-Lemon-Success"] = "true";
         return Ok(_responseBuilder.Success(data, message));
     }
 
@@ -43,6 +45,7 @@ public abstract class LemonController(IResponseBuilder responseBuilder) : Contro
     /// <returns></returns>
     protected IActionResult SuccessWithMessage(string message)
     {
+        Response.Headers["X-Lemon-Success"] = "true";
         return Ok(_responseBuilder.Success(null, message));
     }
 
@@ -142,6 +145,7 @@ public abstract class LemonController(IResponseBuilder responseBuilder) : Contro
     /// <returns></returns>
     protected IActionResult PagedSuccess<T>(IEnumerable<T> items, long total)
     {
+        Response.Headers["X-Lemon-Success"] = "true";
         return Success(new { Items = items, Total = total });
     }
 

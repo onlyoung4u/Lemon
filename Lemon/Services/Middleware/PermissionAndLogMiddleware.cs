@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text;
 using Lemon.Models;
 using Lemon.Services.Attributes;
@@ -25,18 +24,15 @@ public class PermissionAndLogMiddleware(
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // 获取端点信息
         var endpoint = context.GetEndpoint();
-        var attribute = endpoint?.Metadata.GetMetadata<PermissionAndLogAttribute>();
+        var attribute = endpoint?.Metadata.GetMetadata<LemonAdminAttribute>();
 
-        // 如果没有PermissionAndLogAttribute，直接执行下一个中间件
         if (attribute == null)
         {
             await _next(context);
             return;
         }
 
-        // 读取请求体并缓存（在执行下一个中间件之前）
         string requestBody = string.Empty;
         if (context.Request.ContentLength > 0 || context.Request.ContentLength == null)
         {
@@ -44,16 +40,13 @@ public class PermissionAndLogMiddleware(
             context.Items["RequestBody"] = requestBody;
         }
 
-        // 权限检查
         if (!string.IsNullOrEmpty(attribute.Permission))
         {
             await CheckPermissionAsync(context, attribute.Permission);
         }
 
-        // 执行下一个中间件
         await _next(context);
 
-        // 记录日志（在响应之后）
         if (!string.IsNullOrEmpty(attribute.Description))
         {
             await LogOperationAsync(context, attribute.Description, requestBody);
@@ -100,13 +93,14 @@ public class PermissionAndLogMiddleware(
             var nickname = context.GetNickname() ?? string.Empty;
 
             var freeSql = context.RequestServices.GetService<IFreeSql>();
+
             if (freeSql == null)
             {
                 return;
             }
 
             var responseHeaders = context.Response.Headers;
-            var isError = responseHeaders.ContainsKey("X-Lemon-Error");
+            var isSuccess = responseHeaders.ContainsKey("X-Lemon-Success");
 
             var log = new LemonOperationLog
             {
@@ -118,18 +112,10 @@ public class PermissionAndLogMiddleware(
                 Method = context.Request.Method,
                 Ip = IpHelper.GetClientIpAddress(context),
                 Body = requestBody,
-                Success = !isError,
+                Success = isSuccess,
             };
 
             await freeSql.Insert(log).ExecuteAffrowsAsync();
-
-            // 调试日志
-            _logger.LogInformation(
-                "记录操作日志 - 用户: {Username}, 操作: {Description}, 请求体长度: {BodyLength}",
-                username,
-                description,
-                requestBody?.Length ?? 0
-            );
         }
         catch (Exception ex)
         {

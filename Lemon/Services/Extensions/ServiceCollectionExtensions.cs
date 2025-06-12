@@ -6,6 +6,7 @@ using FreeSql;
 using Lemon.Services.Cache;
 using Lemon.Services.Database;
 using Lemon.Services.Jwt;
+using Lemon.Services.Permission;
 using Lemon.Services.Response;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -49,7 +50,7 @@ public static class ServiceCollectionExtensions
         services.AddDataSeedServices();
 
         // 添加业务服务
-        // services.AddBusinessServices();
+        services.AddBusinessServices();
 
         // 添加HTTP上下文访问器
         // services.AddHttpContextAccessor();
@@ -218,7 +219,8 @@ public static class ServiceCollectionExtensions
     /// </summary>
     private static IServiceCollection AddBusinessServices(this IServiceCollection services)
     {
-        // 注册业务服务
+        // 添加权限服务
+        services.AddSingleton<IPermissionService, PermissionService>();
 
         return services;
     }
