@@ -2,7 +2,7 @@ using System.Text;
 using Lemon.Models;
 using Lemon.Services.Attributes;
 using Lemon.Services.Exceptions;
-using Lemon.Services.Jwt;
+using Lemon.Services.Extensions;
 using Lemon.Services.Permission;
 using Lemon.Services.Utils;
 using Microsoft.AspNetCore.Http;

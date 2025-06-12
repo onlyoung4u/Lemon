@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Http;
 
-namespace Lemon.Services.Jwt;
+namespace Lemon.Services.Extensions;
 
 /// <summary>
 /// JWT扩展方法
 /// </summary>
-public static class JwtExtensions
+public static class UserInfoExtensions
 {
     /// <summary>
     /// 获取当前认证用户的ID
