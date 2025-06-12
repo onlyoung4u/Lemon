@@ -1,11 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FluentValidation;
+using Lemon.Services.Exceptions;
 using Lemon.Services.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-namespace Lemon.Services.Exceptions;
+namespace Lemon.Services.Middleware;
 
 /// <summary>
 /// 全局异常处理中间件

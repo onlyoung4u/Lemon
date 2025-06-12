@@ -1,5 +1,4 @@
 using Lemon.Services.Database;
-using Lemon.Services.Exceptions;
 using Lemon.Services.Middleware;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
