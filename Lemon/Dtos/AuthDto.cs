@@ -70,3 +70,9 @@ public class MenuResponse
     public required MenuMeta Meta { get; set; }
     public List<MenuResponse>? Children { get; set; }
 }
+
+public class ChangePasswordRequest
+{
+    public required string OldPassword { get; set; }
+    public required string NewPassword { get; set; }
+}

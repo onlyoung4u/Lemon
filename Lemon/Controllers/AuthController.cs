@@ -74,4 +74,17 @@ public class AuthController(IResponseBuilder responseBuilder, IAuthService authS
 
         return Success(result);
     }
+
+    /// <summary>
+    /// 修改密码
+    /// </summary>
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var userId = HttpContext.GetUserId();
+
+        await _authService.ChangePasswordAsync(request, userId);
+
+        return Success();
+    }
 }

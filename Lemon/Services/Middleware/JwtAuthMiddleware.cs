@@ -27,13 +27,17 @@ public class JwtAuthMiddleware(RequestDelegate next, ILogger<JwtAuthMiddleware> 
         try
         {
             var token = ExtractTokenFromRequest(context);
+            var path = context.Request.Path.Value;
 
-            if (string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(path))
             {
                 throw new UnauthorizedException();
             }
 
-            var userInfo = await jwtService.ValidateTokenAndGetUserInfo(token);
+            var pathParts = path.Split('/').Where(x => !string.IsNullOrEmpty(x));
+            var jwtName = pathParts.First();
+
+            var userInfo = await jwtService.ValidateTokenAndGetUserInfo(token, jwtName);
 
             if (userInfo != null && int.TryParse(userInfo.UserId, out var userId) && userId > 0)
             {

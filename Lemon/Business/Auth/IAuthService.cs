@@ -8,4 +8,5 @@ public interface IAuthService
     Task LogoutAsync(string token);
     Task<UserInfoResponse> GetUserInfoAsync(int userId);
     Task<List<MenuResponse>> GetMenusAsync(int userId);
+    Task ChangePasswordAsync(ChangePasswordRequest request, int userId);
 }

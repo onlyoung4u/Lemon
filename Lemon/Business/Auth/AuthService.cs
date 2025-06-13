@@ -177,4 +177,19 @@ public class AuthService(
 
         return menuTree;
     }
+
+    public async Task ChangePasswordAsync(ChangePasswordRequest request, int userId)
+    {
+        var user = await _freeSql.Select<LemonUser>().Where(x => x.Id == userId).FirstAsync();
+
+        if (!BCryptHelper.VerifyPassword(request.OldPassword, user.Password))
+        {
+            throw new BusinessException("旧密码错误");
+        }
+
+        await _freeSql
+            .Update<LemonUser>(user.Id)
+            .Set(x => x.Password, BCryptHelper.HashPassword(request.NewPassword))
+            .ExecuteAffrowsAsync();
+    }
 }
