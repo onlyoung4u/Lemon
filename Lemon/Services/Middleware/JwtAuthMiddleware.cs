@@ -28,23 +28,23 @@ public class JwtAuthMiddleware(RequestDelegate next, ILogger<JwtAuthMiddleware> 
         {
             var token = ExtractTokenFromRequest(context);
 
-            if (!string.IsNullOrEmpty(token))
+            if (string.IsNullOrEmpty(token))
             {
-                var userInfo = await jwtService.ValidateTokenAndGetUserInfo(token);
-
-                if (userInfo != null && int.TryParse(userInfo.UserId, out var userId) && userId > 0)
-                {
-                    context.Items["UserId"] = userId;
-                    context.Items["Username"] = userInfo.Username;
-                    context.Items["Nickname"] = userInfo.Nickname;
-
-                    await _next(context);
-
-                    return;
-                }
+                throw new UnauthorizedException();
             }
 
-            throw new UnauthorizedException();
+            var userInfo = await jwtService.ValidateTokenAndGetUserInfo(token);
+
+            if (userInfo != null && int.TryParse(userInfo.UserId, out var userId) && userId > 0)
+            {
+                context.Items["UserId"] = userId;
+                context.Items["Username"] = userInfo.Username;
+                context.Items["Nickname"] = userInfo.Nickname;
+            }
+            else
+            {
+                throw new UnauthorizedException();
+            }
         }
         catch (UnauthorizedException)
         {
@@ -55,6 +55,8 @@ public class JwtAuthMiddleware(RequestDelegate next, ILogger<JwtAuthMiddleware> 
             _logger.LogError(ex, "JWT认证过程中发生异常");
             throw new UnauthorizedException();
         }
+
+        await _next(context);
     }
 
     /// <summary>

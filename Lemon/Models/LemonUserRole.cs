@@ -2,11 +2,12 @@ using FreeSql.DataAnnotations;
 
 namespace Lemon.Models;
 
-[Index("uk_user_id_role_id", "UserId, RoleId", true)]
-public class LemonUserRole : LemonBaseWithoutTimestamps
+public class LemonUserRole
 {
+    [Column(IsPrimary = true)]
     public int UserId { get; set; }
 
+    [Column(IsPrimary = true)]
     public int RoleId { get; set; }
 
     [Navigate(nameof(UserId))]

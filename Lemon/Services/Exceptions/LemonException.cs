@@ -36,3 +36,9 @@ public class UnauthorizedException(string? message = null)
 /// </summary>
 public class ForbiddenException(string? message = null)
     : LemonException(ResponseCodes.Forbidden, message) { }
+
+/// <summary>
+/// 业务异常
+/// </summary>
+public class BusinessException(string? message = null)
+    : LemonException(ResponseCodes.Failure, message) { }

@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using FluentValidation;
 using FreeSql;
+using Lemon.Business.Auth;
 using Lemon.Services.Cache;
 using Lemon.Services.Database;
 using Lemon.Services.Jwt;
@@ -51,9 +52,6 @@ public static class ServiceCollectionExtensions
 
         // 添加业务服务
         services.AddBusinessServices();
-
-        // 添加HTTP上下文访问器
-        // services.AddHttpContextAccessor();
 
         return services;
     }
@@ -210,17 +208,6 @@ public static class ServiceCollectionExtensions
 
         // 注册混合缓存服务
         services.AddSingleton<IHybridCacheService, HybridCacheService>();
-
-        return services;
-    }
-
-    /// <summary>
-    /// 添加业务服务
-    /// </summary>
-    private static IServiceCollection AddBusinessServices(this IServiceCollection services)
-    {
-        // 添加权限服务
-        services.AddSingleton<IPermissionService, PermissionService>();
 
         return services;
     }
@@ -406,6 +393,20 @@ public static class ServiceCollectionExtensions
         {
             services.AddScoped(typeof(IDataSeedService), serviceType);
         }
+
+        return services;
+    }
+
+    /// <summary>
+    /// 添加业务服务
+    /// </summary>
+    private static IServiceCollection AddBusinessServices(this IServiceCollection services)
+    {
+        // 添加权限服务
+        services.AddSingleton<IPermissionService, PermissionService>();
+
+        // 添加业务服务
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }
