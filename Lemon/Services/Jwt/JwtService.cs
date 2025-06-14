@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using Lemon.Models;
 using Lemon.Services.Cache;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -9,11 +10,13 @@ namespace Lemon.Services.Jwt;
 
 public class JwtService(
     IOptionsMonitor<List<JwtOptions>> jwtOptionsMonitor,
-    IHybridCacheService cache
+    IHybridCacheService cache,
+    IFreeSql freeSql
 ) : IJwtService
 {
     private readonly IOptionsMonitor<List<JwtOptions>> _jwtOptionsMonitor = jwtOptionsMonitor;
     private readonly IHybridCacheService _cache = cache;
+    private readonly IFreeSql _freeSql = freeSql;
     private readonly JsonWebTokenHandler _tokenHandler = new();
 
     /// <summary>
@@ -152,12 +155,40 @@ public class JwtService(
                 }
             }
 
+            var isInactive = await IsInactiveUser(userId, options.Name);
+
+            if (isInactive)
+            {
+                return null;
+            }
+
             return new JwtUserInfo(userId, username, nickname);
         }
         catch
         {
             return null;
         }
+    }
+
+    private async Task<bool> IsInactiveUser(string userId, string name)
+    {
+        name = name.ToLower();
+
+        var cacheKey = $"lemon:user:inactive:{name}";
+
+        var inactiveUsers = await _cache.GetFromMemoryCacheAsync<List<int>>(cacheKey);
+
+        if (inactiveUsers == null)
+        {
+            inactiveUsers = await _freeSql
+                .Select<LemonInactiveUser>()
+                .Where(x => x.Group == name)
+                .ToListAsync(x => x.UserId);
+
+            await _cache.SetMemoryCacheAsync(cacheKey, inactiveUsers, TimeSpan.FromMinutes(10));
+        }
+
+        return inactiveUsers?.Contains(int.Parse(userId)) ?? false;
     }
 
     /// <summary>
