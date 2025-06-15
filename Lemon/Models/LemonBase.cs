@@ -7,10 +7,10 @@ public class LemonBase
     [Column(IsPrimary = true, IsIdentity = true)]
     public int Id { get; set; }
 
-    [Column(ServerTime = DateTimeKind.Utc, CanUpdate = false)]
+    [Column(ServerTime = DateTimeKind.Local, CanUpdate = false)]
     public DateTime CreatedAt { get; set; }
 
-    [Column(ServerTime = DateTimeKind.Utc)]
+    [Column(ServerTime = DateTimeKind.Local)]
     public DateTime? UpdatedAt { get; set; }
 }
 

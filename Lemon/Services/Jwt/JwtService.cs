@@ -36,7 +36,7 @@ public class JwtService(
             new(JwtRegisteredClaimNames.Jti, jti),
             new(
                 JwtRegisteredClaimNames.Iat,
-                DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+                DateTimeOffset.Now.ToUnixTimeSeconds().ToString(),
                 ClaimValueTypes.Integer64
             ),
         };
@@ -54,7 +54,7 @@ public class JwtService(
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(options.ExpiresInMinutes),
+            Expires = DateTime.Now.AddMinutes(options.ExpiresInMinutes),
             Issuer = options.Issuer,
             Audience = options.Audience,
             SigningCredentials = credentials,
@@ -88,7 +88,7 @@ public class JwtService(
             new(JwtRegisteredClaimNames.Jti, jti),
             new(
                 JwtRegisteredClaimNames.Iat,
-                DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+                DateTimeOffset.Now.ToUnixTimeSeconds().ToString(),
                 ClaimValueTypes.Integer64
             ),
         };
@@ -96,7 +96,7 @@ public class JwtService(
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(options.ExpiresInMinutes),
+            Expires = DateTime.Now.AddMinutes(options.ExpiresInMinutes),
             Issuer = options.Issuer,
             Audience = options.Audience,
             SigningCredentials = credentials,
@@ -214,7 +214,7 @@ public class JwtService(
             {
                 var expTime = DateTimeOffset.FromUnixTimeSeconds(long.Parse(exp));
                 var revokedKey = $"lemon:jwt:revoked:{options.Name}:{jti}";
-                var ttl = expTime - DateTimeOffset.UtcNow;
+                var ttl = expTime - DateTimeOffset.Now;
 
                 if (ttl > TimeSpan.Zero)
                 {

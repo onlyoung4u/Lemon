@@ -41,7 +41,7 @@ public class AuthService(
         await _freeSql
             .Update<LemonUser>(user.Id)
             .Set(x => x.LastLoginIp, clientIp)
-            .Set(x => x.LastLoginTime, DateTime.UtcNow)
+            .Set(x => x.LastLoginTime, DateTime.Now)
             .ExecuteAffrowsAsync();
 
         return new LoginResponse { Token = token };
@@ -81,15 +81,16 @@ public class AuthService(
     private static MenuResponse HandleMenu(LemonMenu menu, string parentPath)
     {
         var fullPath = parentPath + menu.Path;
+        var pathParts = fullPath.Split('/').Where(x => !string.IsNullOrEmpty(x));
+        var name = string.Join("_", pathParts);
 
         var component = "layout.base";
         if (!string.IsNullOrEmpty(parentPath))
         {
-            var pathParts = fullPath.Split('/').Where(x => !string.IsNullOrEmpty(x));
-            component = "view." + string.Join("_", pathParts);
+            component = "view." + name;
         }
 
-        var meta = new MenuMeta { Title = menu.Title };
+        var meta = new MenuMeta { Title = menu.Title, Permission = menu.Permission };
 
         if (!string.IsNullOrEmpty(menu.Icon))
             meta.Icon = menu.Icon;
@@ -99,7 +100,7 @@ public class AuthService(
 
         return new MenuResponse
         {
-            Name = menu.Permission,
+            Name = name,
             Path = fullPath,
             Component = component,
             Meta = meta,
@@ -165,8 +166,8 @@ public class AuthService(
 
         var mainMenu = new MenuResponse
         {
-            Name = "index",
-            Path = "/index",
+            Name = "home",
+            Path = "/home",
             Component = "layout.base$view.home",
             Meta = new MenuMeta { Title = "首页", Icon = "mdi:monitor-dashboard" },
         };

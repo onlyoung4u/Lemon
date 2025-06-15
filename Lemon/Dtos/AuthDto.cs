@@ -58,6 +58,7 @@ public class UserInfoResponse
 public class MenuMeta
 {
     public required string Title { get; set; }
+    public string? Permission { get; set; }
     public string? Icon { get; set; }
     public string? Href { get; set; }
 }
