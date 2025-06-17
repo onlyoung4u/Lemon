@@ -1,4 +1,5 @@
 using Lemon.Models;
+using Lemon.Services.Constants;
 using Microsoft.Extensions.Logging;
 
 namespace Lemon.Services.Database.Seeds;
@@ -37,6 +38,7 @@ public class LemonMenuSeedService(IFreeSql freeSql, ILogger<LemonMenuSeedService
     {
         var systemMenu = new LemonMenu
         {
+            MenuType = MenuConstants.Types.Menu,
             ParentId = 0,
             Title = "系统管理",
             Path = "/system",
@@ -52,6 +54,7 @@ public class LemonMenuSeedService(IFreeSql freeSql, ILogger<LemonMenuSeedService
         {
             new()
             {
+                MenuType = MenuConstants.Types.Menu,
                 ParentId = systemMenuId,
                 Title = "用户管理",
                 Path = "/users",
@@ -60,6 +63,7 @@ public class LemonMenuSeedService(IFreeSql freeSql, ILogger<LemonMenuSeedService
             },
             new()
             {
+                MenuType = MenuConstants.Types.Menu,
                 ParentId = systemMenuId,
                 Title = "角色管理",
                 Path = "/roles",
@@ -68,6 +72,7 @@ public class LemonMenuSeedService(IFreeSql freeSql, ILogger<LemonMenuSeedService
             },
             new()
             {
+                MenuType = MenuConstants.Types.Menu,
                 ParentId = systemMenuId,
                 Title = "菜单管理",
                 Path = "/menus",
@@ -76,6 +81,7 @@ public class LemonMenuSeedService(IFreeSql freeSql, ILogger<LemonMenuSeedService
             },
             new()
             {
+                MenuType = MenuConstants.Types.Menu,
                 ParentId = systemMenuId,
                 Title = "系统配置",
                 Path = "/settings",
@@ -84,6 +90,7 @@ public class LemonMenuSeedService(IFreeSql freeSql, ILogger<LemonMenuSeedService
             },
             new()
             {
+                MenuType = MenuConstants.Types.Menu,
                 ParentId = systemMenuId,
                 Title = "配置管理",
                 Path = "/configs",
@@ -92,6 +99,7 @@ public class LemonMenuSeedService(IFreeSql freeSql, ILogger<LemonMenuSeedService
             },
             new()
             {
+                MenuType = MenuConstants.Types.Menu,
                 ParentId = systemMenuId,
                 Title = "操作日志",
                 Path = "/logs",
@@ -129,11 +137,11 @@ public class LemonMenuSeedService(IFreeSql freeSql, ILogger<LemonMenuSeedService
             menus.Add(
                 new()
                 {
+                    MenuType = MenuConstants.Types.Button,
                     ParentId = parentId,
                     Title = ActionLabels[action],
                     Path = "",
                     Permission = perfix + "." + action,
-                    Hidden = true,
                     IsSystem = true,
                 }
             );

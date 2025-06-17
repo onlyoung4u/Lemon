@@ -1,6 +1,7 @@
 using Lemon.Business.Base;
 using Lemon.Dtos;
 using Lemon.Models;
+using Lemon.Services.Constants;
 using Lemon.Services.Exceptions;
 using Lemon.Services.Jwt;
 using Lemon.Services.Permission;
@@ -87,7 +88,14 @@ public class AuthService(
         var component = "layout.base";
         if (!string.IsNullOrEmpty(parentPath))
         {
-            component = "view." + name;
+            if (string.IsNullOrEmpty(menu.Link))
+            {
+                component = "view." + name;
+            }
+            else
+            {
+                component = "view.iframe-page";
+            }
         }
 
         var meta = new MenuMeta { Title = menu.Title, Permission = menu.Permission };
@@ -143,7 +151,7 @@ public class AuthService(
         {
             menus = await _freeSql
                 .Select<LemonMenu>()
-                .Where(x => x.Hidden == false)
+                .Where(x => x.MenuType == MenuConstants.Types.Menu)
                 .OrderBy(x => x.Sort)
                 .OrderBy(x => x.Id)
                 .ToListAsync();
@@ -156,7 +164,7 @@ public class AuthService(
             {
                 menus = await _freeSql
                     .Select<LemonMenu>()
-                    .Where(x => x.Hidden == false)
+                    .Where(x => x.MenuType == MenuConstants.Types.Menu)
                     .Where(x => permissions.Contains(x.Permission))
                     .OrderBy(x => x.Sort)
                     .OrderBy(x => x.Id)

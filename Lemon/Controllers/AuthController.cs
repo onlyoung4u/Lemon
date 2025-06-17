@@ -1,3 +1,4 @@
+using FluentValidation;
 using Lemon.Business.Auth;
 using Lemon.Dtos;
 using Lemon.Services.Attributes;
@@ -23,10 +24,18 @@ public class AuthController(IResponseBuilder responseBuilder, IAuthService authS
     [HttpPost("login")]
     [SkipJwtAuth]
     [LemonAdmin(null, "登录")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login(
+        [FromBody] LoginRequest request,
+        IValidator<LoginRequest> validator
+    )
     {
-        var clientIp = IpHelper.GetClientIpAddress(HttpContext);
-        var result = await _authService.LoginAsync(request, clientIp);
+        await ValidateAsync(request, validator);
+
+        var result = await _authService.LoginAsync(
+            request,
+            IpHelper.GetClientIpAddress(HttpContext)
+        );
+
         return Success(result);
     }
 
@@ -79,11 +88,14 @@ public class AuthController(IResponseBuilder responseBuilder, IAuthService authS
     /// 修改密码
     /// </summary>
     [HttpPost("change-password")]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequest request,
+        IValidator<ChangePasswordRequest> validator
+    )
     {
-        var userId = HttpContext.GetUserId();
+        await ValidateAsync(request, validator);
 
-        await _authService.ChangePasswordAsync(request, userId);
+        await _authService.ChangePasswordAsync(request, HttpContext.GetUserId());
 
         return Success();
     }

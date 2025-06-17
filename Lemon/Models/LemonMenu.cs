@@ -5,6 +5,8 @@ namespace Lemon.Models;
 [Index("uk_permission", "Permission", true)]
 public class LemonMenu : LemonBase
 {
+    public int MenuType { get; set; }
+
     public int ParentId { get; set; }
 
     [Column(StringLength = 64)]
@@ -20,8 +22,6 @@ public class LemonMenu : LemonBase
     public string Link { get; set; } = string.Empty;
 
     public int Sort { get; set; }
-
-    public bool Hidden { get; set; } = false;
 
     public bool IsSystem { get; set; } = false;
 }

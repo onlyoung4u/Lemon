@@ -1,3 +1,5 @@
+using FluentValidation;
+using Lemon.Services.Exceptions;
 using Lemon.Services.Response;
 using Microsoft.AspNetCore.Mvc;
 
@@ -142,11 +144,26 @@ public abstract class LemonController(IResponseBuilder responseBuilder) : Contro
     /// <typeparam name="T">数据类型</typeparam>
     /// <param name="items">数据列表</param>
     /// <param name="total">总数</param>
+    /// <param name="page">页码</param>
+    /// <param name="size">每页数量</param>
     /// <returns></returns>
-    protected IActionResult PagedSuccess<T>(IEnumerable<T> items, long total)
+    protected IActionResult PagedSuccess<T>(
+        IEnumerable<T> items,
+        long total,
+        int page = 1,
+        int size = 10
+    )
     {
         Response.Headers["X-Lemon-Success"] = "true";
-        return Success(new { Items = items, Total = total });
+        return Success(
+            new
+            {
+                Items = items,
+                Total = total,
+                Current = page,
+                Size = size,
+            }
+        );
     }
 
     #endregion
@@ -154,23 +171,26 @@ public abstract class LemonController(IResponseBuilder responseBuilder) : Contro
     #region 验证辅助方法
 
     /// <summary>
-    /// 检查模型状态，如果无效则返回错误响应
+    /// 使用 FluentValidation 验证模型
     /// </summary>
-    /// <returns></returns>
-    protected IActionResult? ValidateModelState()
+    /// <typeparam name="T">模型类型</typeparam>
+    /// <param name="model">要验证的模型</param>
+    /// <param name="validator">验证器</param>
+    /// <returns>如果验证失败返回错误响应，否则返回null</returns>
+    protected static async Task ValidateAsync<T>(T? request, IValidator<T> validator)
     {
-        if (!ModelState.IsValid)
+        if (request == null)
         {
-            var errors = ModelState
-                .Where(x => x.Value?.Errors.Count > 0)
-                .SelectMany(x => x.Value!.Errors)
-                .Select(x => x.ErrorMessage)
-                .FirstOrDefault();
-
-            return BadRequest(errors ?? "参数验证失败");
+            throw new BadRequestException("参数错误");
         }
 
-        return null;
+        var validationResult = await validator.ValidateAsync(request);
+
+        if (!validationResult.IsValid)
+        {
+            var firstError = validationResult.Errors.FirstOrDefault()?.ErrorMessage;
+            throw new BadRequestException(firstError ?? "参数错误");
+        }
     }
 
     /// <summary>
