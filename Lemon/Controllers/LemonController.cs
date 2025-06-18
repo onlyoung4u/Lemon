@@ -144,26 +144,11 @@ public abstract class LemonController(IResponseBuilder responseBuilder) : Contro
     /// <typeparam name="T">数据类型</typeparam>
     /// <param name="items">数据列表</param>
     /// <param name="total">总数</param>
-    /// <param name="page">页码</param>
-    /// <param name="size">每页数量</param>
     /// <returns></returns>
-    protected IActionResult PagedSuccess<T>(
-        IEnumerable<T> items,
-        long total,
-        int page = 1,
-        int size = 10
-    )
+    protected IActionResult PagedSuccess<T>(IEnumerable<T> items, long total)
     {
         Response.Headers["X-Lemon-Success"] = "true";
-        return Success(
-            new
-            {
-                Items = items,
-                Total = total,
-                Current = page,
-                Size = size,
-            }
-        );
+        return Success(new { Items = items, Total = total });
     }
 
     #endregion
@@ -223,6 +208,45 @@ public abstract class LemonController(IResponseBuilder responseBuilder) : Contro
         }
 
         return null;
+    }
+
+    #endregion
+
+    #region 查询参数辅助方法
+
+    /// <summary>
+    /// 从查询参数中获取分页信息
+    /// </summary>
+    /// <param name="defaultPage">默认页码，默认为1</param>
+    /// <param name="defaultLimit">默认每页数量，默认为10</param>
+    /// <returns>返回页码和每页数量的元组</returns>
+    protected (int page, int limit) GetPageAndLimit(int defaultPage = 1, int defaultLimit = 10)
+    {
+        // 从查询参数中获取 page
+        var pageQuery = Request.Query["page"].FirstOrDefault();
+        var page = defaultPage;
+        if (
+            !string.IsNullOrEmpty(pageQuery)
+            && int.TryParse(pageQuery, out var parsedPage)
+            && parsedPage > 0
+        )
+        {
+            page = parsedPage;
+        }
+
+        // 从查询参数中获取 limit
+        var limitQuery = Request.Query["limit"].FirstOrDefault();
+        var limit = defaultLimit;
+        if (
+            !string.IsNullOrEmpty(limitQuery)
+            && int.TryParse(limitQuery, out var parsedLimit)
+            && parsedLimit > 0
+        )
+        {
+            limit = parsedLimit;
+        }
+
+        return (page, limit);
     }
 
     #endregion

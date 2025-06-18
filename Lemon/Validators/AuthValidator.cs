@@ -10,8 +10,8 @@ public class LoginRequestValidator : AbstractValidator<LoginRequest>
         RuleFor(x => x.Username)
             .NotEmpty()
             .WithMessage("用户名不能为空")
-            .Length(6, 64)
-            .WithMessage("用户名长度必须在6到64个字符之间");
+            .Length(4, 64)
+            .WithMessage("用户名长度必须在4到64个字符之间");
 
         RuleFor(x => x.Password)
             .NotEmpty()

@@ -67,7 +67,6 @@ public class AuthService(
             .FirstAsync();
 
         var roles = userId == 1 ? ["超级管理员"] : user.Roles.Select(x => x.Name).ToList();
-        var permissions = await _permissionService.GetUserPermissionsAsync(userId);
 
         return new UserInfoResponse
         {
@@ -75,44 +74,45 @@ public class AuthService(
             Username = user.Username,
             Nickname = user.Nickname,
             Roles = roles,
-            Permissions = permissions,
         };
+    }
+
+    public async Task<List<string>> GetPermissionsAsync(int userId)
+    {
+        return await _permissionService.GetUserPermissionsAsync(userId);
     }
 
     private static MenuResponse HandleMenu(LemonMenu menu, string parentPath)
     {
         var fullPath = parentPath + menu.Path;
-        var pathParts = fullPath.Split('/').Where(x => !string.IsNullOrEmpty(x));
-        var name = string.Join("_", pathParts);
 
-        var component = "layout.base";
-        if (!string.IsNullOrEmpty(parentPath))
+        var component = string.Empty;
+        if (!string.IsNullOrEmpty(parentPath) && string.IsNullOrEmpty(menu.Link))
         {
-            if (string.IsNullOrEmpty(menu.Link))
-            {
-                component = "view." + name;
-            }
-            else
-            {
-                component = "view.iframe-page";
-            }
+            component = fullPath + "/index";
         }
 
-        var meta = new MenuMeta { Title = menu.Title, Permission = menu.Permission };
+        var meta = new MenuMeta { Title = menu.Title };
 
         if (!string.IsNullOrEmpty(menu.Icon))
             meta.Icon = menu.Icon;
 
         if (!string.IsNullOrEmpty(menu.Link))
-            meta.Href = menu.Link;
+            meta.Link = menu.Link;
 
-        return new MenuResponse
+        var menuResponse = new MenuResponse
         {
-            Name = name,
+            Name = menu.Permission,
             Path = fullPath,
-            Component = component,
             Meta = meta,
         };
+
+        if (!string.IsNullOrEmpty(component))
+        {
+            menuResponse.Component = component;
+        }
+
+        return menuResponse;
     }
 
     private static List<MenuResponse> HandleMenuTree(
@@ -174,10 +174,32 @@ public class AuthService(
 
         var mainMenu = new MenuResponse
         {
-            Name = "home",
-            Path = "/home",
-            Component = "layout.base$view.home",
-            Meta = new MenuMeta { Title = "首页", Icon = "mdi:monitor-dashboard" },
+            Name = "dashboard",
+            Path = "/dashboard",
+            Redirect = "/workspace",
+            Meta = new MenuMeta
+            {
+                Order = -1,
+                Title = "首页",
+                Icon = "lucide:layout-dashboard",
+            },
+            Children =
+            [
+                new()
+                {
+                    Name = "workspace",
+                    Path = "/workspace",
+                    Component = "/dashboard/workspace/index",
+                    Meta = new MenuMeta
+                    {
+                        Title = "工作台",
+                        Icon = "carbon:workspace",
+                        AffixTab = true,
+                        HideInMenu = true,
+                        ActivePath = "/dashboard",
+                    },
+                },
+            ],
         };
 
         var menuTree = HandleMenuTree(menus);

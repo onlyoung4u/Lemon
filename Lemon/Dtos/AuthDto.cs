@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Lemon.Dtos;
 
 /// <summary>
@@ -38,26 +36,26 @@ public class UserInfoResponse
     /// 角色
     /// </summary>
     public required List<string> Roles { get; set; }
-
-    /// <summary>
-    /// 权限
-    /// </summary>
-    public required List<string> Permissions { get; set; }
 }
 
 public class MenuMeta
 {
     public required string Title { get; set; }
-    public string? Permission { get; set; }
     public string? Icon { get; set; }
-    public string? Href { get; set; }
+    public string? Link { get; set; }
+    public int? Order { get; set; }
+
+    public bool? AffixTab { get; set; }
+    public bool? HideInMenu { get; set; }
+    public string? ActivePath { get; set; }
 }
 
 public class MenuResponse
 {
     public required string Name { get; set; }
     public required string Path { get; set; }
-    public required string Component { get; set; }
+    public string? Component { get; set; }
+    public string? Redirect { get; set; }
     public required MenuMeta Meta { get; set; }
     public List<MenuResponse>? Children { get; set; }
 }

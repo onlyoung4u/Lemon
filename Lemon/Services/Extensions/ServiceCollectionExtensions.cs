@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using FluentValidation;
 using FreeSql;
 using Lemon.Business.Auth;
+using Lemon.Business.System;
 using Lemon.Services.Cache;
 using Lemon.Services.Database;
 using Lemon.Services.Jwt;
@@ -407,6 +408,7 @@ public static class ServiceCollectionExtensions
 
         // 添加业务服务
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IMenuService, MenuService>();
 
         return services;
     }

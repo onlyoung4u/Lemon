@@ -72,6 +72,19 @@ public class AuthController(IResponseBuilder responseBuilder, IAuthService authS
     }
 
     /// <summary>
+    /// 获取用户权限
+    /// </summary>
+    [HttpGet("permissions")]
+    public async Task<IActionResult> GetPermissions()
+    {
+        var userId = HttpContext.GetUserId();
+
+        var result = await _authService.GetPermissionsAsync(userId);
+
+        return Success(result);
+    }
+
+    /// <summary>
     /// 获取用户菜单
     /// </summary>
     [HttpGet("menus")]
