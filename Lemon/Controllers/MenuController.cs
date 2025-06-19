@@ -17,7 +17,7 @@ public class MenuController(IResponseBuilder responseBuilder, IMenuService menuS
     private readonly IMenuService _menuService = menuService;
 
     [HttpGet]
-    [LemonAdmin("menu.list", "菜单列表")]
+    [LemonAdmin("menu.list")]
     public async Task<IActionResult> GetMenus(bool withButton = false)
     {
         var menus = await _menuService.GetMenusAsync(withButton);

@@ -409,6 +409,7 @@ public static class ServiceCollectionExtensions
         // 添加业务服务
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IMenuService, MenuService>();
+        services.AddScoped<ILogService, LogService>();
 
         return services;
     }
