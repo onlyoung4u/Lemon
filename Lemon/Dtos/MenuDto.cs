@@ -57,7 +57,7 @@ public class MenuItem
     public bool IsSystem { get; set; }
 }
 
-public class MenuTree : MenuItem
+public class MenuResponse : MenuItem
 {
-    public List<MenuTree>? Children { get; set; }
+    public List<MenuResponse>? Children { get; set; }
 }

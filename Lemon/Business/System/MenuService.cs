@@ -9,15 +9,15 @@ namespace Lemon.Business.System;
 
 public class MenuService(IFreeSql freeSql) : BaseService(freeSql), IMenuService
 {
-    private static List<MenuTree> HandleMenuTree(List<LemonMenu> menus, int parentId = 0)
+    private static List<MenuResponse> HandleMenuTree(List<LemonMenu> menus, int parentId = 0)
     {
-        var tree = new List<MenuTree>();
+        var tree = new List<MenuResponse>();
 
         foreach (var menu in menus)
         {
             if (menu.ParentId == parentId)
             {
-                var menuDto = menu.Adapt<MenuTree>();
+                var menuDto = menu.Adapt<MenuResponse>();
 
                 var children = HandleMenuTree(menus, menu.Id);
 
@@ -33,7 +33,7 @@ public class MenuService(IFreeSql freeSql) : BaseService(freeSql), IMenuService
         return tree;
     }
 
-    public async Task<List<MenuTree>> GetMenusAsync(bool withButton)
+    public async Task<List<MenuResponse>> GetMenusAsync(bool withButton)
     {
         var menus = await _freeSql
             .Select<LemonMenu>()

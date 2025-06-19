@@ -82,7 +82,7 @@ public class AuthService(
         return await _permissionService.GetUserPermissionsAsync(userId);
     }
 
-    private static MenuResponse HandleMenu(LemonMenu menu, string parentPath)
+    private static MenuTreeResponse HandleMenu(LemonMenu menu, string parentPath)
     {
         var fullPath = parentPath + menu.Path;
 
@@ -100,7 +100,7 @@ public class AuthService(
         if (!string.IsNullOrEmpty(menu.Link))
             meta.Link = menu.Link;
 
-        var menuResponse = new MenuResponse
+        var menuResponse = new MenuTreeResponse
         {
             Name = menu.Permission,
             Path = fullPath,
@@ -115,13 +115,13 @@ public class AuthService(
         return menuResponse;
     }
 
-    private static List<MenuResponse> HandleMenuTree(
+    private static List<MenuTreeResponse> HandleMenuTree(
         List<LemonMenu> menus,
         int parentId = 0,
         string path = ""
     )
     {
-        var tree = new List<MenuResponse>();
+        var tree = new List<MenuTreeResponse>();
 
         foreach (var menu in menus)
         {
@@ -143,7 +143,7 @@ public class AuthService(
         return tree;
     }
 
-    public async Task<List<MenuResponse>> GetMenusAsync(int userId)
+    public async Task<List<MenuTreeResponse>> GetMenusAsync(int userId)
     {
         var menus = new List<LemonMenu>();
 
@@ -172,7 +172,7 @@ public class AuthService(
             }
         }
 
-        var mainMenu = new MenuResponse
+        var mainMenu = new MenuTreeResponse
         {
             Name = "dashboard",
             Path = "/dashboard",

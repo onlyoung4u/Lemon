@@ -50,14 +50,14 @@ public class MenuMeta
     public string? ActivePath { get; set; }
 }
 
-public class MenuResponse
+public class MenuTreeResponse
 {
     public required string Name { get; set; }
     public required string Path { get; set; }
     public string? Component { get; set; }
     public string? Redirect { get; set; }
     public required MenuMeta Meta { get; set; }
-    public List<MenuResponse>? Children { get; set; }
+    public List<MenuTreeResponse>? Children { get; set; }
 }
 
 public class ChangePasswordRequest
