@@ -7,10 +7,6 @@ public class LogQueryRequestValidator : AbstractValidator<LogQueryRequest>
 {
     public LogQueryRequestValidator()
     {
-        RuleFor(x => x.Page).GreaterThanOrEqualTo(1).WithMessage("页码必须大于或等于1");
-
-        RuleFor(x => x.Limit).InclusiveBetween(1, 100).WithMessage("每页大小必须在1到100之间");
-
         RuleFor(x => x.UserId)
             .GreaterThan(0)
             .When(x => x.UserId.HasValue)

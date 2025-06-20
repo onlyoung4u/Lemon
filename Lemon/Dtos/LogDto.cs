@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Lemon.Dtos;
 
-public class LogQueryRequest
+public class LogQueryRequest : PageQueryRequest
 {
     /// <summary>
     /// 用户ID
@@ -23,18 +23,6 @@ public class LogQueryRequest
     /// 请求方法
     /// </summary>
     public string? Method { get; set; }
-
-    /// <summary>
-    /// 页码
-    /// </summary>
-    [Range(1, int.MaxValue, ErrorMessage = "页码必须大于0")]
-    public int Page { get; set; } = 1;
-
-    /// <summary>
-    /// 每页大小
-    /// </summary>
-    [Range(1, 100, ErrorMessage = "每页大小必须在1-100之间")]
-    public int Limit { get; set; } = 10;
 }
 
 public class LogResponse

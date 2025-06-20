@@ -2,6 +2,7 @@ using FluentValidation;
 using Lemon.Business.System;
 using Lemon.Dtos;
 using Lemon.Services.Attributes;
+using Lemon.Services.Extensions;
 using Lemon.Services.Middleware;
 using Lemon.Services.Response;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,14 @@ public class MenuController(IResponseBuilder responseBuilder, IMenuService menuS
     : LemonController(responseBuilder)
 {
     private readonly IMenuService _menuService = menuService;
+
+    [HttpGet("user")]
+    public async Task<IActionResult> GetUserMenus()
+    {
+        var menus = await _menuService.GetUserMenusAsync(HttpContext.GetUserId());
+
+        return Success(menus);
+    }
 
     [HttpGet]
     [LemonAdmin("menu.list")]

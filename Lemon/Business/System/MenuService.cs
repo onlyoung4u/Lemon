@@ -3,12 +3,17 @@ using Lemon.Dtos;
 using Lemon.Models;
 using Lemon.Services.Constants;
 using Lemon.Services.Exceptions;
+using Lemon.Services.Permission;
 using Mapster;
 
 namespace Lemon.Business.System;
 
-public class MenuService(IFreeSql freeSql) : BaseService(freeSql), IMenuService
+public class MenuService(IFreeSql freeSql, IPermissionService permissionService)
+    : BaseService(freeSql),
+        IMenuService
 {
+    private readonly IPermissionService _permissionService = permissionService;
+
     private static List<MenuResponse> HandleMenuTree(List<LemonMenu> menus, int parentId = 0)
     {
         var tree = new List<MenuResponse>();
@@ -31,6 +36,28 @@ public class MenuService(IFreeSql freeSql) : BaseService(freeSql), IMenuService
         }
 
         return tree;
+    }
+
+    public async Task<List<MenuResponse>> GetUserMenusAsync(int userId)
+    {
+        if (userId == 1)
+        {
+            return await GetMenusAsync(true);
+        }
+
+        var userPermissions = await _permissionService.GetUserPermissionsAsync(userId);
+
+        if (userPermissions.Count == 0)
+        {
+            return [];
+        }
+
+        var menus = await _freeSql
+            .Select<LemonMenu>()
+            .WhereIf(userId > 0, x => userPermissions.Contains(x.Permission))
+            .ToListAsync();
+
+        return HandleMenuTree(menus);
     }
 
     public async Task<List<MenuResponse>> GetMenusAsync(bool withButton)
@@ -73,6 +100,8 @@ public class MenuService(IFreeSql freeSql) : BaseService(freeSql), IMenuService
         var menu = request.Adapt<LemonMenu>();
 
         await _freeSql.Insert(menu).ExecuteAffrowsAsync();
+
+        await _permissionService.RefreshAsync();
     }
 
     public async Task UpdateMenuAsync(int id, MenuUpdateRequest request)
@@ -117,6 +146,8 @@ public class MenuService(IFreeSql freeSql) : BaseService(freeSql), IMenuService
             .SetDto(request)
             .Where(x => x.Id == id)
             .ExecuteAffrowsAsync();
+
+        await _permissionService.RefreshAsync();
     }
 
     private async Task<List<int>> GetAllChildrenIdsAsync(int id)
@@ -164,5 +195,7 @@ public class MenuService(IFreeSql freeSql) : BaseService(freeSql), IMenuService
                 .Where(x => childrenIds.Contains(x.Id))
                 .ExecuteAffrowsAsync();
         }
+
+        await _permissionService.RefreshAsync();
     }
 }

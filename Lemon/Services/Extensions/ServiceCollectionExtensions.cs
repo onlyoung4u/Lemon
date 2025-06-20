@@ -410,6 +410,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<ILogService, LogService>();
+        services.AddScoped<IRoleService, RoleService>();
 
         return services;
     }
