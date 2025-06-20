@@ -17,6 +17,14 @@ public class RoleController(IResponseBuilder responseBuilder, IRoleService roleS
 {
     private readonly IRoleService _roleService = roleService;
 
+    [HttpGet("user")]
+    public async Task<IActionResult> GetUserRoles()
+    {
+        var result = await _roleService.GetUserRolesAsync(HttpContext.GetUserId());
+
+        return Success(result);
+    }
+
     /// <summary>
     /// 获取角色列表
     /// </summary>

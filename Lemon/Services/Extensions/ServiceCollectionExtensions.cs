@@ -411,6 +411,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<ILogService, LogService>();
         services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<IUserService, UserService>();
 
         return services;
     }

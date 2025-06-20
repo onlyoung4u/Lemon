@@ -3,7 +3,6 @@ using Lemon.Dtos;
 using Lemon.Models;
 using Lemon.Services.Exceptions;
 using Lemon.Services.Permission;
-using Mapster;
 
 namespace Lemon.Business.System;
 
@@ -12,6 +11,16 @@ public class RoleService(IFreeSql freeSql, IPermissionService permissionService)
         IRoleService
 {
     private readonly IPermissionService _permissionService = permissionService;
+
+    public async Task<List<RoleResponse>> GetUserRolesAsync(int userId)
+    {
+        var roles = await _freeSql
+            .Select<LemonRole>()
+            .WhereIf(userId > 1, x => x.CreatorId == userId)
+            .ToListAsync();
+
+        return [.. roles.Select(role => new RoleResponse { Id = role.Id, Name = role.Name })];
+    }
 
     public async Task<PageResponse<RoleResponse>> GetRolesAsync(
         RoleQueryRequest request,
@@ -56,12 +65,12 @@ public class RoleService(IFreeSql freeSql, IPermissionService permissionService)
             throw new BusinessException("权限不能为空");
         }
 
-        var existPermissions = await _freeSql
+        var existingPermissionCount = await _freeSql
             .Select<LemonMenu>()
             .Where(x => permissions.Contains(x.Permission))
-            .ToListAsync(x => x.Permission);
+            .CountAsync();
 
-        if (existPermissions.Count != permissions.Length)
+        if (existingPermissionCount != permissions.Length)
         {
             throw new BusinessException("存在未知的权限");
         }
