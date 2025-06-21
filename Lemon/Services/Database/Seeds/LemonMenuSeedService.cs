@@ -83,15 +83,6 @@ public class LemonMenuSeedService(IFreeSql freeSql, ILogger<LemonMenuSeedService
             {
                 MenuType = MenuConstants.Types.Menu,
                 ParentId = systemMenuId,
-                Title = "系统配置",
-                Path = "/setting",
-                Permission = "settings",
-                IsSystem = true,
-            },
-            new()
-            {
-                MenuType = MenuConstants.Types.Menu,
-                ParentId = systemMenuId,
                 Title = "配置管理",
                 Path = "/config",
                 Permission = "config.list",
