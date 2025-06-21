@@ -27,8 +27,10 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration
     )
     {
+        var isAdminEnabled = configuration.GetValue("Switch:Admin", true);
+
         // 配置控制器
-        services.ConfigureControllers();
+        services.ConfigureControllers(isAdminEnabled);
 
         // 添加跨域
         services.AddLemonCors(configuration);
@@ -62,11 +64,16 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <param name="services">服务集合</param>
     /// <returns>服务集合</returns>
-    private static IServiceCollection ConfigureControllers(this IServiceCollection services)
+    private static IServiceCollection ConfigureControllers(
+        this IServiceCollection services,
+        bool isAdminEnabled
+    )
     {
-        services
-            .AddControllers()
-            .ConfigureApplicationPartManager(manager =>
+        var controllerBuilder = services.AddControllers();
+
+        if (isAdminEnabled)
+        {
+            controllerBuilder.ConfigureApplicationPartManager(manager =>
             {
                 var lemonAssembly = Assembly.GetAssembly(typeof(ServiceCollectionExtensions));
 
@@ -76,7 +83,10 @@ public static class ServiceCollectionExtensions
                         new Microsoft.AspNetCore.Mvc.ApplicationParts.AssemblyPart(lemonAssembly)
                     );
                 }
-            })
+            });
+        }
+
+        controllerBuilder
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
@@ -153,13 +163,20 @@ public static class ServiceCollectionExtensions
         DataType dataType = dbType.ToUpper() switch
         {
             "MYSQL" => DataType.MySql,
+            "SQLSERVER" => DataType.SqlServer,
             "POSTGRESQL" => DataType.PostgreSQL,
+            "ORACLE" => DataType.Oracle,
+            "SQLITE" => DataType.Sqlite,
             "DAMENG" => DataType.Dameng,
             "SHENTONG" => DataType.ShenTong,
             "KINGBASE" => DataType.KingbaseES,
             "GBASE" => DataType.GBase,
             "XUGU" => DataType.Xugu,
+            "TDENGINE" => DataType.TDengine,
             "HANGAO" => DataType.Custom,
+            "POLARDB" => DataType.Custom,
+            "OCEANBASE" => DataType.Custom,
+            "OPENGUASS" => DataType.Custom,
             _ => throw new NotSupportedException($"不支持的数据库类型: {dbType}"),
         };
 

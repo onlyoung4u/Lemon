@@ -13,7 +13,7 @@ public static class ApplicationBuilderExtensions
     public static WebApplication UseLemon(this WebApplication app, bool isDevelopment = false)
     {
         // 数据库填充
-        if (isDevelopment && app.Configuration.GetValue("DataSeed:Enabled", false))
+        if (isDevelopment && app.Configuration.GetValue("Switch:DataSeed", false))
         {
             app.UseLemonDataSeed();
         }
@@ -37,7 +37,10 @@ public static class ApplicationBuilderExtensions
         app.UseJwtAuth();
 
         // 权限检查和日志记录
-        app.UsePermissionAndLog();
+        if (app.Configuration.GetValue("Switch:Admin", true))
+        {
+            app.UsePermissionAndLog();
+        }
 
         return app;
     }
