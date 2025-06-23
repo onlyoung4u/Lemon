@@ -62,13 +62,28 @@ app.Run();
   },
   "AllowedHosts": "*",
   "ConnectionStrings": {
-    "Database": "Host=localhost;Port=5432;Username=postgres;Password=your-password;Database=your-database;",
     "Redis": "localhost:6379"
   },
-  "Database": {
-    "Type": "MySQL",
-    "ConnectionPool": false,
-    "AutoSyncStructure": true
+  "Databases": {
+    "DefaultDatabase": "Default",
+    "Connections": [
+      {
+        "Name": "Default",
+        "Type": "PostgreSQL",
+        "ConnectionString": "Host=localhost;Port=5432;Username=postgres;Password=your-password;Database=your-database;",
+        "ConnectionPool": true,
+        "AutoSyncStructure": true,
+        "EnableMonitor": true
+      },
+      {
+        "Name": "Secondary",
+        "Type": "MySQL",
+        "ConnectionString": "Server=localhost;User ID=root;Password=your-password;Database=secondary_db;",
+        "ConnectionPool": true,
+        "AutoSyncStructure": false,
+        "EnableMonitor": false
+      }
+    ]
   },
   "Switch": {
     "Admin": true,
@@ -100,6 +115,62 @@ app.Run();
       "4003": "第三方服务调用失败"
     }
   }
+}
+```
+
+#### 多数据库使用方式
+
+在业务服务中使用多数据库，可以继承 `MultiDatabaseBaseService`：
+
+```csharp
+using Lemon.Business.Base;
+using Lemon.Services.Database;
+
+public class MyService : MultiDatabaseBaseService
+{
+    public MyService(IFreeSql freeSql, IMultiDatabaseService multiDatabase)
+        : base(freeSql, multiDatabase)
+    {
+    }
+
+    public async Task<List<User>> GetUsersFromSecondaryDatabase()
+    {
+        // 获取指定数据库实例
+        var secondaryDb = GetDatabase("Secondary");
+
+        // 使用指定数据库进行操作
+        return await secondaryDb.Select<User>().ToListAsync();
+    }
+
+    public async Task<List<User>> GetUsersFromDefaultDatabase()
+    {
+        // 使用默认数据库
+        return await Db.Select<User>().ToListAsync();
+    }
+}
+```
+
+或者直接注入 `IMultiDatabaseService`：
+
+```csharp
+public class MyController : ControllerBase
+{
+    private readonly IMultiDatabaseService _multiDatabase;
+
+    public MyController(IMultiDatabaseService multiDatabase)
+    {
+        _multiDatabase = multiDatabase;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetData()
+    {
+        // 获取指定数据库
+        var db = _multiDatabase.GetDatabase("Secondary");
+        var data = await db.Select<MyEntity>().ToListAsync();
+
+        return Success(data);
+    }
 }
 ```
 

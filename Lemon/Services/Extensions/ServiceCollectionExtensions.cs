@@ -35,7 +35,7 @@ public static class ServiceCollectionExtensions
         // 添加跨域
         services.AddLemonCors(configuration);
 
-        // 添加数据库服务
+        // 添加数据库服务（包含多数据库支持）
         services.AddFreeSql(configuration);
 
         // 添加混合缓存服务
@@ -149,17 +149,8 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>
-    /// 添加FreeSql数据库服务
-    /// </summary>
-    private static IServiceCollection AddFreeSql(
-        this IServiceCollection services,
-        IConfiguration configuration
-    )
+    private static DataType GetDatabaseType(string dbType)
     {
-        var connectionString = configuration.GetConnectionString("Database");
-        var dbType = configuration.GetValue("Database:Type", "MySQL");
-
         DataType dataType = dbType.ToUpper() switch
         {
             "MYSQL" => DataType.MySql,
@@ -180,17 +171,65 @@ public static class ServiceCollectionExtensions
             _ => throw new NotSupportedException($"不支持的数据库类型: {dbType}"),
         };
 
+        return dataType;
+    }
+
+    private static (
+        DatabaseConfig DefaultDatabase,
+        List<DatabaseConfig> OtherDatabases
+    ) HandleDatabaseConfig(List<DatabaseConfig>? databaseConfigs, string defaultDatabaseName)
+    {
+        if (databaseConfigs == null || databaseConfigs.Count == 0)
+        {
+            throw new NotSupportedException("数据库配置不能为空");
+        }
+
+        foreach (var databaseConfig in databaseConfigs)
+        {
+            if (
+                string.IsNullOrEmpty(databaseConfig.Name)
+                || string.IsNullOrEmpty(databaseConfig.ConnectionString)
+                || string.IsNullOrEmpty(databaseConfig.Type)
+            )
+            {
+                throw new NotSupportedException("数据库配置错误，请检查数据库配置");
+            }
+
+            databaseConfig.DbType = GetDatabaseType(databaseConfig.Type);
+        }
+
+        var defaultDatabase =
+            databaseConfigs.FirstOrDefault(x => x.Name == defaultDatabaseName)
+            ?? throw new NotSupportedException($"默认数据库配置不存在: {defaultDatabaseName}");
+
+        var otherDatabases = databaseConfigs.Where(x => x.Name != defaultDatabaseName).ToList();
+
+        return (defaultDatabase, otherDatabases);
+    }
+
+    /// <summary>
+    /// 添加FreeSql数据库服务
+    /// </summary>
+    private static IServiceCollection AddFreeSql(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        var databases = configuration.GetSection("Databases");
+        var (defaultDatabase, otherDatabases) = HandleDatabaseConfig(
+            databases.GetSection("Connections").Get<List<DatabaseConfig>>(),
+            databases.GetValue("DefaultDatabase", "Default")
+        );
+
         var isDevelopment =
             Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
         var builder = new FreeSqlBuilder()
-            .UseConnectionString(dataType, connectionString)
-            .UseAdoConnectionPool(configuration.GetValue("Database:ConnectionPool", false))
-            .UseAutoSyncStructure(
-                isDevelopment && configuration.GetValue("Database:AutoSyncStructure", false)
-            );
+            .UseConnectionString(defaultDatabase.DbType, defaultDatabase.ConnectionString)
+            .UseAdoConnectionPool(defaultDatabase.ConnectionPool)
+            .UseAutoSyncStructure(isDevelopment && defaultDatabase.AutoSyncStructure);
 
-        if (isDevelopment)
+        if (isDevelopment && defaultDatabase.EnableMonitor)
         {
             builder.UseMonitorCommand(cmd => Console.WriteLine($"SQL: {cmd.CommandText}"));
         }
@@ -198,6 +237,29 @@ public static class ServiceCollectionExtensions
         var freeSql = builder.Build();
 
         services.AddSingleton(freeSql);
+
+        // 添加多数据库支持
+        services.AddMultiDatabaseServices(otherDatabases ?? []);
+
+        return services;
+    }
+
+    /// <summary>
+    /// 添加多数据库服务
+    /// </summary>
+    private static IServiceCollection AddMultiDatabaseServices(
+        this IServiceCollection services,
+        List<DatabaseConfig> databaseConfigs
+    )
+    {
+        services.Configure<List<DatabaseConfig>>(options =>
+        {
+            options.Clear();
+            options.AddRange(databaseConfigs);
+        });
+
+        // 注册多数据库服务为单例
+        services.AddSingleton<IMultiDatabaseService, MultiDatabaseService>();
 
         return services;
     }
