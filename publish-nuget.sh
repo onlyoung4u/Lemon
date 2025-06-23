@@ -16,6 +16,7 @@ cd Lemon
 # 清理之前的构建
 echo "🧹 清理之前的构建..."
 dotnet clean
+rm -rf ../nupkg
 
 # 构建项目
 echo "🔨 构建项目..."
