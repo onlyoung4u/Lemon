@@ -17,6 +17,7 @@
 1. 查看 [Lemon/README.md](./Lemon/README.md) 了解详细的安装和配置说明
 2. 参考 `Lemon.Sample/` 项目中的示例代码
 3. 根据需要配置数据库连接和其他设置
+4. 队列使用查看 [CAP-README.md](CAP-README.md)
 
 ## 📄 许可证
 
