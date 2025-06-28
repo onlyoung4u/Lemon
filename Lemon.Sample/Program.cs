@@ -1,9 +1,31 @@
 using FluentValidation;
+using Lemon.Sample.Services.Queue;
 using Lemon.Services.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddLemonServices(builder.Configuration);
+
+// 添加队列服务
+var queueOptions = builder.Configuration.GetSection("Queue").Get<QueueOptions>();
+
+if (
+    queueOptions is not null
+    && !string.IsNullOrEmpty(queueOptions.Database)
+    && !string.IsNullOrEmpty(queueOptions.Redis)
+)
+{
+    builder.Services.AddCap(x =>
+    {
+        x.UsePostgreSql(queueOptions.Database);
+        x.UseRedis(queueOptions.Redis);
+        x.FailedRetryCount = queueOptions.FailedRetryCount;
+        x.DefaultGroupName = queueOptions.DefaultGroupName;
+    });
+}
+
+// 注册队列消费者
+builder.Services.AddQueueConsumers();
 
 builder.Services.AddOpenApi();
 

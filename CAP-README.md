@@ -44,12 +44,6 @@ dotnet add package DotNetCore.CAP.AzureServiceBus
 dotnet add package DotNetCore.CAP.AmazonSQS
 ```
 
-#### Redis Streams
-
-```bash
-dotnet add package DotNetCore.CAP.RedisStreams
-```
-
 ### 3. 安装数据库存储包（选择其一）
 
 #### PostgreSQL（推荐）

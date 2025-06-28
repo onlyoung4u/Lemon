@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Coravel" Version="6.0.2" />
+    <PackageReference Include="DotNetCore.CAP" Version="8.3.5" />
+    <PackageReference Include="DotNetCore.CAP.PostgreSql" Version="8.3.5" />
+    <PackageReference Include="DotNetCore.CAP.RedisStreams" Version="8.3.5" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5" />
   </ItemGroup>
 
