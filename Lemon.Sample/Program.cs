@@ -1,5 +1,6 @@
 using FluentValidation;
 using Lemon.Sample.Services.Queue;
+using Lemon.Sample.Services.Schedule;
 using Lemon.Services.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,10 +23,13 @@ if (
         x.FailedRetryCount = queueOptions.FailedRetryCount;
         x.DefaultGroupName = queueOptions.DefaultGroupName;
     });
+
+    // 注册队列消费者
+    builder.Services.AddQueueConsumers();
 }
 
-// 注册队列消费者
-builder.Services.AddQueueConsumers();
+// 添加调度器服务
+builder.Services.AddSchedulers();
 
 builder.Services.AddOpenApi();
 
@@ -41,6 +45,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseLemon(app.Environment.IsDevelopment());
+
+// 配置定时任务调度
+app.UseSchedulers();
 
 app.MapControllers();
 
