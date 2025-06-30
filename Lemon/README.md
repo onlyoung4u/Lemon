@@ -24,6 +24,9 @@ using Lemon.Services.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 配置 Serilog 日志（可选）
+builder.UseLemonSerilog();
+
 // 添加 LemonStudio 服务
 builder.Services.AddLemonServices(builder.Configuration);
 
@@ -58,6 +61,20 @@ app.Run();
     "LogLevel": {
       "Default": "Information",
       "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "Serilog": {
+    "EnableFileLogging": true,
+    "EnableConsoleLogging": true,
+    "LogFilePath": "logs/app-.log",
+    "RollingInterval": "Day",
+    "RetainedFileCountLimit": 30,
+    "FileSizeLimitBytes": 10485760,
+    "MinimumLevel": "Information",
+    "MinimumLevelOverrides": {
+      "Microsoft": "Warning",
+      "Microsoft.AspNetCore": "Warning",
+      "System": "Warning"
     }
   },
   "AllowedHosts": "*",
@@ -117,6 +134,60 @@ app.Run();
   }
 }
 ```
+
+### 日志配置
+
+LemonStudio 集成了 Serilog 日志框架，提供强大的日志记录功能。
+
+#### 启用 Serilog
+
+在 `Program.cs` 中调用 `UseLemonSerilog()` 即可启用：
+
+```csharp
+// 使用默认配置
+builder.UseLemonSerilog();
+
+// 或者自定义配置
+builder.UseLemonSerilog(options =>
+{
+    options.LogFilePath = "/var/log/myapp/app-.log";
+    options.MinimumLevel = "Debug";
+    options.RetainedFileCountLimit = 60;
+});
+```
+
+#### 在代码中使用日志
+
+```csharp
+public class MyController : ControllerBase
+{
+    private readonly ILogger<MyController> _logger;
+
+    public MyController(ILogger<MyController> logger)
+    {
+        _logger = logger;
+    }
+
+    [HttpGet]
+    public IActionResult Get()
+    {
+        _logger.LogInformation("处理 GET 请求");
+
+        // 结构化日志
+        _logger.LogInformation("用户 {UserId} 执行了 {Action} 操作", 123, "查询");
+
+        return Ok();
+    }
+}
+```
+
+#### 日志输出
+
+- **控制台**: 开发环境实时查看
+- **文件**: 生产环境持久化存储
+- **Systemd Journal**: 通过 `journalctl` 命令查看
+
+详细配置说明请参考 [Serilog 集成文档](Services/Logging/README.md)。
 
 #### 多数据库使用方式
 

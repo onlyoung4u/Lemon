@@ -5,6 +5,9 @@ using Lemon.Services.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 配置 Serilog 日志
+builder.UseLemonSerilog();
+
 builder.Services.AddLemonServices(builder.Configuration);
 
 // 添加队列服务
