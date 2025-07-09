@@ -1,8 +1,10 @@
+using System.Reflection;
 using Lemon.Services.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Events;
+using Serilog.Settings.Configuration;
 
 namespace Lemon.Services.Extensions;
 
@@ -33,8 +35,16 @@ public static class WebApplicationBuilderExtensions
         builder.Host.UseSerilog(
             (context, services, configuration) =>
             {
+                var options = new ConfigurationReaderOptions(
+                    [
+                        Assembly.Load("Serilog.Sinks.Console"),
+                        Assembly.Load("Serilog.Sinks.File"),
+                        Assembly.Load("Serilog.Sinks.Async"),
+                    ]
+                );
+
                 configuration
-                    .ReadFrom.Configuration(context.Configuration)
+                    .ReadFrom.Configuration(context.Configuration, options)
                     .ReadFrom.Services(services)
                     .Enrich.FromLogContext();
 
