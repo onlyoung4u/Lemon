@@ -10,6 +10,7 @@ using Lemon.Services.Database;
 using Lemon.Services.Jwt;
 using Lemon.Services.Permission;
 using Lemon.Services.Response;
+using Lemon.Services.StaticFiles;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,6 +56,9 @@ public static class ServiceCollectionExtensions
 
         // 添加业务服务
         services.AddBusinessServices();
+
+        // 添加静态文件配置
+        services.AddStaticFilesOptions(configuration);
 
         return services;
     }
@@ -492,6 +496,22 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IConfigService, ConfigService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// 添加静态文件配置
+    /// </summary>
+    private static IServiceCollection AddStaticFilesOptions(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
+    {
+        services.Configure<StaticFilesOptions>(configuration.GetSection("StaticFiles"));
+
+        // 注册静态文件服务
+        services.AddScoped<IStaticFilesService, StaticFilesService>();
 
         return services;
     }

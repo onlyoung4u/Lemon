@@ -1,10 +1,14 @@
 using Lemon.Services.Database;
 using Lemon.Services.Middleware;
+using Lemon.Services.StaticFiles;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Lemon.Services.Extensions;
 
@@ -41,6 +45,9 @@ public static class ApplicationBuilderExtensions
         {
             app.UsePermissionAndLog();
         }
+
+        // 静态文件
+        app.UseLemonStaticFiles();
 
         return app;
     }
@@ -108,5 +115,38 @@ public static class ApplicationBuilderExtensions
         using var scope = app.Services.CreateScope();
         var seedManager = scope.ServiceProvider.GetRequiredService<DataSeedManager>();
         await seedManager.SeedAllAsync();
+    }
+
+    /// <summary>
+    /// 使用Lemon静态文件服务
+    /// </summary>
+    /// <param name="app">应用程序构建器</param>
+    /// <returns>应用程序构建器</returns>
+    public static IApplicationBuilder UseLemonStaticFiles(this IApplicationBuilder app)
+    {
+        var serviceProvider = app.ApplicationServices;
+        var staticFilesOptions = serviceProvider.GetService<IOptions<StaticFilesOptions>>()?.Value;
+
+        if (staticFilesOptions?.Enable == true)
+        {
+            var storagePath = staticFilesOptions.GetStoragePath(
+                serviceProvider.GetRequiredService<IWebHostEnvironment>().ContentRootPath
+            );
+
+            if (!Directory.Exists(storagePath))
+            {
+                Directory.CreateDirectory(storagePath);
+            }
+
+            app.UseStaticFiles(
+                new StaticFileOptions
+                {
+                    FileProvider = new PhysicalFileProvider(storagePath),
+                    RequestPath = staticFilesOptions.RequestPath,
+                }
+            );
+        }
+
+        return app;
     }
 }
