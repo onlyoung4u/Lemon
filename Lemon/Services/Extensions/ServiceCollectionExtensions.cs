@@ -29,9 +29,13 @@ public static class ServiceCollectionExtensions
     )
     {
         var isAdminEnabled = configuration.GetValue("Switch:Admin", true);
+        var jsonIgnoreCondition = configuration.GetValue(
+            "JsonIgnoreCondition",
+            JsonIgnoreCondition.WhenWritingNull
+        );
 
         // 配置控制器
-        services.ConfigureControllers(isAdminEnabled);
+        services.ConfigureControllers(isAdminEnabled, jsonIgnoreCondition);
 
         // 添加跨域
         services.AddLemonCors(configuration);
@@ -67,10 +71,13 @@ public static class ServiceCollectionExtensions
     /// 配置控制器
     /// </summary>
     /// <param name="services">服务集合</param>
+    /// <param name="isAdminEnabled">是否启用管理后台</param>
+    /// <param name="jsonIgnoreCondition">Json忽略条件</param>
     /// <returns>服务集合</returns>
     private static IServiceCollection ConfigureControllers(
         this IServiceCollection services,
-        bool isAdminEnabled
+        bool isAdminEnabled,
+        JsonIgnoreCondition jsonIgnoreCondition
     )
     {
         var controllerBuilder = services.AddControllers();
@@ -95,8 +102,7 @@ public static class ServiceCollectionExtensions
             {
                 options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
                 options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                options.JsonSerializerOptions.DefaultIgnoreCondition =
-                    JsonIgnoreCondition.WhenWritingNull;
+                options.JsonSerializerOptions.DefaultIgnoreCondition = jsonIgnoreCondition;
             })
             .ConfigureApiBehaviorOptions(options =>
             {
