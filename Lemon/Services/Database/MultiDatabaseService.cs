@@ -121,6 +121,8 @@ public class MultiDatabaseService : IMultiDatabaseService, IDisposable
 
             var freeSql = builder.Build();
 
+            freeSql.UseJsonMap();
+
             _logger.LogInformation(
                 "数据库实例创建成功: {DatabaseName}, 类型: {Type}",
                 name,

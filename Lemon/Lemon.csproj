@@ -7,7 +7,7 @@
     
     <!-- NuGet Package Information -->
     <PackageId>LemonStudio</PackageId>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <Authors>August</Authors>
     <Company>LemonStudio</Company>
     <Product>LemonStudio</Product>
@@ -30,9 +30,10 @@
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="FluentValidation" Version="12.0.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
-    <PackageReference Include="FreeSql" Version="3.5.212" />
-    <PackageReference Include="FreeSql.Provider.MySqlConnector" Version="3.5.212" />
-    <PackageReference Include="FreeSql.Provider.PostgreSQL" Version="3.5.212" />
+    <PackageReference Include="FreeSql" Version="3.5.304" />
+    <PackageReference Include="FreeSql.Extensions.JsonMap" Version="3.5.304" />
+    <PackageReference Include="FreeSql.Provider.MySqlConnector" Version="3.5.304" />
+    <PackageReference Include="FreeSql.Provider.PostgreSQL" Version="3.5.304" />
     <PackageReference Include="Mapster" Version="7.4.2-pre02" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.14.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />

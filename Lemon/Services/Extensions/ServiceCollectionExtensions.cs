@@ -246,6 +246,8 @@ public static class ServiceCollectionExtensions
 
         var freeSql = builder.Build();
 
+        freeSql.UseJsonMap();
+
         services.AddSingleton(freeSql);
 
         // 添加多数据库支持
