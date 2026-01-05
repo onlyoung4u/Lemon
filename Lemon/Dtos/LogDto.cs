@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Lemon.Dtos;
 
 public class LogQueryRequest : PageQueryRequest
