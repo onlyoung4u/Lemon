@@ -36,15 +36,11 @@ public class ExceptionHandlerMiddleware(
         }
         catch (Exception ex)
         {
-            await HandleExceptionAsync(context, ex, _logger);
+            await HandleExceptionAsync(context, ex);
         }
     }
 
-    private async Task HandleExceptionAsync(
-        HttpContext context,
-        Exception exception,
-        ILogger<ExceptionHandlerMiddleware> logger
-    )
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         ApiResponse response;
 
@@ -57,7 +53,7 @@ public class ExceptionHandlerMiddleware(
                 response = HandleValidationException(ex);
                 break;
             default:
-                logger.LogError("请求异常: {Message}", exception.Message);
+                _logger.LogError(exception, "请求异常");
                 response = CreateResponse(ResponseCodes.Failure, null, "服务器内部错误");
                 break;
         }

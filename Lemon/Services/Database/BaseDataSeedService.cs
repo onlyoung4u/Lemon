@@ -1,4 +1,3 @@
-using FreeSql;
 using Microsoft.Extensions.Logging;
 
 namespace Lemon.Services.Database;
