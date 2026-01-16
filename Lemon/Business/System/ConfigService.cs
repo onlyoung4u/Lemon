@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Lemon.Business.Base;
 using Lemon.Dtos;
 using Lemon.Models;
@@ -41,6 +42,69 @@ public class ConfigService(IFreeSql freeSql) : BaseService(freeSql), IConfigServ
             ?? throw new BusinessException("配置不存在");
 
         return config.Adapt<ConfigDetailResponse>();
+    }
+
+    public async Task<T> GetConfigValueAsync<T>(string key, T? defaultValue = default)
+    {
+        var config = await _freeSql
+            .Select<LemonConfig>()
+            .Where(x => x.Key == key && x.IsActive)
+            .ToOneAsync();
+
+        if (config == null || string.IsNullOrEmpty(config.Value))
+        {
+            return defaultValue!;
+        }
+
+        try
+        {
+            var targetType = typeof(T);
+            var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+            if (underlyingType == typeof(string))
+            {
+                return (T)(object)config.Value;
+            }
+
+            if (underlyingType == typeof(Guid))
+            {
+                if (Guid.TryParse(config.Value, out var guidResult))
+                {
+                    return (T)(object)guidResult;
+                }
+                return defaultValue!;
+            }
+
+            if (underlyingType == typeof(TimeSpan))
+            {
+                if (TimeSpan.TryParse(config.Value, out var timeSpanResult))
+                {
+                    return (T)(object)timeSpanResult;
+                }
+                return defaultValue!;
+            }
+
+            if (underlyingType == typeof(DateTime))
+            {
+                if (DateTime.TryParse(config.Value, out var dateTimeResult))
+                {
+                    return (T)(object)dateTimeResult;
+                }
+                return defaultValue!;
+            }
+
+            if (underlyingType.IsPrimitive || underlyingType == typeof(decimal))
+            {
+                var converted = Convert.ChangeType(config.Value, underlyingType);
+                return (T)converted;
+            }
+
+            return JsonSerializer.Deserialize<T>(config.Value) ?? defaultValue!;
+        }
+        catch
+        {
+            return defaultValue!;
+        }
     }
 
     public async Task CreateConfigAsync(ConfigRequest request)
